@@ -77,6 +77,42 @@ loadData().then(data => {
     });
 
     function updateBar(){
+		regions_keys = d3.map(data, function (d) {return d['region'];}).keys();
+		regions_values = d3.set(data.map(d=>d.region)).values();
+		
+		regions_means = [];
+		regions_values.forEach(function(r_mean) {
+			values = data.filter(function(d){
+				return d.region == r_mean;
+				}
+			);
+			regions_means.push(d3.mean(values, d => d[param][year]))
+		});
+		
+		regions_key_means = []
+		regions_keys.forEach((key, mean_r_value) => {
+			let r_results = {"region": key, "mean": regions_means[mean_r_value]};
+            regions_key_means.push(r_results);
+		});
+		
+		xBar.domain(regions_keys);
+		yBar.domain([0, d3.max(regions_means)]).range([height, 0]);
+		
+		xBarAxis.call(d3.axisBottom(xBar));
+		yBarAxis.call(d3.axisLeft(yBar));
+		
+		barChart.selectAll('rect').remove();
+		
+		barChart.selectAll('rect')
+			.data(regions_key_means)
+			.enter()
+			.append('rect')
+			.attr('width', xBar.bandwidth())
+			.attr('height', d => height - yBar(d['mean']) - 30)
+			.attr('x', d => xBar(d['region']))
+			.attr('y', d => yBar(d['mean']))
+			.style("fill", d => colorScale(d['region']));
+		
         return;
     }
 
@@ -95,14 +131,14 @@ loadData().then(data => {
 		scatterPlot.selectAll('circle').remove();
 		
 		scatterPlot.selectAll('circle')
-		.data(data)
-		.enter()
-		.append('circle')
-		.attr('cx', d => x(d[xParam][year]))
-		.attr('cy', d => y(d[yParam][year]))
-		.attr('r', d => radiusScale(d[rParam][year]))
-		.style("fill", d => colorScale(d['region']))
-		.style("opacity", 0.8);
+			.data(data)
+			.enter()
+			.append('circle')
+			.attr('cx', d => x(d[xParam][year]))
+			.attr('cy', d => y(d[yParam][year]))
+			.attr('r', d => radiusScale(d[rParam][year]))
+			.style("fill", d => colorScale(d['region']))
+			.style("opacity", 0.8);
         return;
     }
 
