@@ -75,9 +75,14 @@ loadData().then(data => {
         param = d3.select(this).property('value');
         updateBar();
     });
+	
+	d3.select('#p').on('change', function(){ 
+        lineParam = d3.select(this).property('value');
+        updateLinePlot();
+    });
 
     function updateBar(){
-		regions_keys = d3.map(data, function (d) {return d['region'];}).keys();
+		regions_keys = d3.map(data, function (d) {return d.region;}).keys();
 		regions_values = d3.set(data.map(d=>d.region)).values();
 		
 		regions_means = [];
@@ -108,15 +113,15 @@ loadData().then(data => {
 			.enter()
 			.append('rect')
 			.attr('width', xBar.bandwidth())
-			.attr('height', d => height - yBar(d['mean']) - 30)
+			.attr('height', d => height - yBar(d.mean) - 30)
 			.attr('x', d => xBar(d['region']))
 			.attr('y', d => yBar(d['mean']))
 			.attr('region', d => d.region)
-			.style("fill", d => colorScale(d['region']));
+			.style("fill", d => colorScale(d.region));
 			
 		d3.selectAll('rect').on('click', function(d) {
-			if (selected != this || selected == '') {
-				selected = this
+			if (highlighted != this || highlighted == '') {
+				highlighted = this
 				d3.selectAll('rect')
 					.transition()
 					.style('opacity', 0.4);
@@ -132,7 +137,7 @@ loadData().then(data => {
 					.filter(d => d.region == bar_region)
 					.style('opacity', 0.8)
 			} else {
-				selected = ''
+				highlighted = ''
 				d3.selectAll('circle')
 					.transition()
 					.style('opacity', 0.8)
@@ -142,9 +147,6 @@ loadData().then(data => {
 					.style('opacity', 1)
 			}
 		});
-			
-			
-		
         return;
     }
 
@@ -170,13 +172,68 @@ loadData().then(data => {
 			.attr('cy', d => y(d[yParam][year]))
 			.attr('r', d => radiusScale(d[rParam][year]))
 			.attr('region', d => d.region)
-			.style("fill", d => colorScale(d['region']))
+			.attr('country', d => d.country)
+			.style("fill", d => colorScale(d.region))
 			.style("opacity", 0.8);
+			
+			
+		d3.selectAll('circle').on('click', function(d) {
+			let sc_country = d3.select(this).attr('country');
+			d3.selectAll('circle').attr('stroke-width', 'default')
+			d3.selectAll('circle')
+				.filter(d => d.country == sc_country)
+				.raise()
+				.attr('stroke-width', 3)
+				
+			selected = sc_country
+			updateLinePlot()
+		});
+		
         return;
     }
+	
+	function updateLinePlot() {
+		if (selected != '') {
+			
+			d3.select('.country-name').text(selected);
+			let data_country = data.filter(d => d.country == selected)[0]
+			let data_years = d3.keys(data_country[lineParam]).splice(0, 221);
+			
+			let dict_data_country = [];
+			data_years.forEach(function(d){
+				dict_data_country.push({'year': Number(d), 'value': Number(data_country[lineParam][d])})
+			});
+			
+			min_year = d3.min(dict_data_country, function(d) { return d.year; });
+			max_year = d3.max(dict_data_country, function(d) { return d.year; });
+			x.domain([min_year, max_year]);
+			xLineAxis.call(d3.axisBottom(x));
+			
+			min_value = d3.min(dict_data_country, function(d) { return d.value; });
+			max_value = d3.max(dict_data_country, function(d) { return d.value; });
+			y.domain([min_value, max_value]);
+			yLineAxis.call(d3.axisLeft(y));
+			
+			lineChart.append('path')
+				.attr('class', 'curve')
+				.datum(dict_data_country)
+				.enter();
+				
+			lineChart.selectAll('.curve')
+				.datum(dict_data_country)
+				.attr("fill", "none")
+				.attr("stroke", "steelblue")
+                .attr("stroke-width", 1)
+                .attr("d", d3.line()
+                    .x(d => x(d.year))
+                    .y(d => y(d.value)))
+		}
+		return;
+	}
 
     updateBar();
     updateScattePlot();
+	updateLinePlot()
 });
 
 
