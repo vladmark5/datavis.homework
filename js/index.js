@@ -25,7 +25,7 @@ let year = '2000';
 let param = 'child-mortality';
 let lineParam = 'gdp';
 let highlighted = '';
-let selected;
+let selected = '';
 
 const x = d3.scaleLinear().range([margin*2, width-margin]);
 const y = d3.scaleLinear().range([height-margin, margin]);
@@ -111,7 +111,39 @@ loadData().then(data => {
 			.attr('height', d => height - yBar(d['mean']) - 30)
 			.attr('x', d => xBar(d['region']))
 			.attr('y', d => yBar(d['mean']))
+			.attr('region', d => d.region)
 			.style("fill", d => colorScale(d['region']));
+			
+		d3.selectAll('rect').on('click', function(d) {
+			if (selected != this || selected == '') {
+				selected = this
+				d3.selectAll('rect')
+					.transition()
+					.style('opacity', 0.4);
+					
+				d3.select(this)
+					.transition()
+					.style('opacity', 1);
+					
+				let bar_region = d3.select(this).attr('region');
+				
+				d3.selectAll('circle').style('opacity', 0);
+				d3.selectAll('circle')
+					.filter(d => d.region == bar_region)
+					.style('opacity', 0.8)
+			} else {
+				selected = ''
+				d3.selectAll('circle')
+					.transition()
+					.style('opacity', 0.8)
+					
+				d3.selectAll('rect')
+					.transition()
+					.style('opacity', 1)
+			}
+		});
+			
+			
 		
         return;
     }
@@ -137,6 +169,7 @@ loadData().then(data => {
 			.attr('cx', d => x(d[xParam][year]))
 			.attr('cy', d => y(d[yParam][year]))
 			.attr('r', d => radiusScale(d[rParam][year]))
+			.attr('region', d => d.region)
 			.style("fill", d => colorScale(d['region']))
 			.style("opacity", 0.8);
         return;
