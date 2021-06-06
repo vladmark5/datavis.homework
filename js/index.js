@@ -81,6 +81,28 @@ loadData().then(data => {
     }
 
     function updateScattePlot(){
+		let values_x = data.map(d=> +d[xParam][year]);
+		let values_y = data.map(d => +d[yParam][year]);
+		let values_r = data.map(d => +d[rParam][year]);
+		
+		x.domain([d3.min(values_x), d3.max(values_x)]);
+		y.domain([d3.min(values_y), d3.max(values_y)]);
+		radiusScale.domain([d3.min(values_r), d3.max(values_r)]);
+		
+		xAxis.call(d3.axisBottom().scale(x));
+		yAxis.call(d3.axisLeft().scale(y));
+		
+		scatterPlot.selectAll('circle').remove();
+		
+		scatterPlot.selectAll('circle')
+		.data(data)
+		.enter()
+		.append('circle')
+		.attr('cx', d => x(d[xParam][year]))
+		.attr('cy', d => y(d[yParam][year]))
+		.attr('r', d => radiusScale(d[rParam][year]))
+		.style("fill", d => colorScale(d['region']))
+		.style("opacity", 1);
         return;
     }
 
